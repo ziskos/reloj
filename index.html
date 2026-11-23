@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Reloj ZISKOS · flip</title>
+<style>
+:root{--fondo:#000;--tarjeta:#0d0d0d;--borde:#1c1c1c;--cifra:#b8b8b8;--linea:#000}
+:root[data-tema="claro"]{--fondo:#ECEDEE;--tarjeta:#24272B;--borde:#2f3337;--cifra:#ECEDEE;--linea:#ECEDEE}
+*{margin:0;box-sizing:border-box}
+html,body{height:100%;background:var(--fondo)}
+body{display:flex;align-items:center;justify-content:center;gap:3vw;padding:4vw;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+.t{position:relative;width:44vw;height:44vw;max-height:88vh;border-radius:3vw;background:var(--tarjeta);border:1px solid var(--borde);perspective:120vw;overflow:hidden}
+.mitad{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:var(--tarjeta)}
+.sup{top:0;border-radius:3vw 3vw 0 0}.inf{bottom:0;border-radius:0 0 3vw 3vw}
+.mitad span{position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:36vw;letter-spacing:-.02em;transform:scaleX(.72);color:var(--cifra);font-variant-numeric:tabular-nums;line-height:1}
+.sup span{top:0}.inf span{bottom:0}
+.t::after{content:"";position:absolute;left:0;right:0;top:50%;height:.35vw;margin-top:-.175vw;background:var(--linea);z-index:5}
+.flip{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:var(--tarjeta);backface-visibility:hidden;z-index:4}
+.flip.a{top:0;transform-origin:bottom;border-radius:3vw 3vw 0 0;animation:a .3s ease-in forwards}
+.flip.b{bottom:0;transform-origin:top;border-radius:0 0 3vw 3vw;transform:rotateX(90deg);animation:b .3s .3s ease-out forwards}
+.flip span{position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:36vw;letter-spacing:-.02em;transform:scaleX(.72);color:var(--cifra);font-variant-numeric:tabular-nums;line-height:1}
+.flip.a span{top:0}.flip.b span{bottom:0}
+@keyframes a{to{transform:rotateX(-90deg)}}@keyframes b{to{transform:rotateX(0)}}
+.ampm{position:absolute;left:2.4vw;bottom:2.2vw;font-size:3vw;font-weight:700;color:var(--cifra);z-index:6}
+@media (prefers-reduced-motion:reduce){.flip{display:none}}
+</style>
+</head>
+<body>
+<div class="t" id="h"><div class="mitad sup"><span></span></div><div class="mitad inf"><span></span></div><div class="ampm" id="ap"></div></div>
+<div class="t" id="m"><div class="mitad sup"><span></span></div><div class="mitad inf"><span></span></div></div>
+<script>
+// Reloj ZISKOS flip · sin dependencias, cookies ni rastreo. ?h=24 (formato 24 h) · ?tema=claro · ?zona=America/Santiago
+(function(){
+  var p=new URLSearchParams(location.search), h24=p.get('h')==='24', zona=p.get('zona')||'America/Santiago';
+  if(p.get('tema')) document.documentElement.setAttribute('data-tema',p.get('tema'));
+  var fmt; try{fmt=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:!h24,timeZone:zona});}catch(e){fmt=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:!h24});}
+  var prev={};
+  function set(id,val){
+    var el=document.getElementById(id), old=prev[id];
+    var s=el.querySelectorAll('.mitad span');
+    if(old===undefined||old===val){s[0].textContent=val;s[1].textContent=val;prev[id]=val;return;}
+    s[0].textContent=val; // mitad superior nueva (queda detrás)
+    el.querySelectorAll('.flip').forEach(function(n){n.remove();});
+    var a=document.createElement('div');a.className='flip a';a.innerHTML='<span></span>';a.firstChild.textContent=old;
+    var b=document.createElement('div');b.className='flip b';b.innerHTML='<span></span>';b.firstChild.textContent=val;
+    el.appendChild(a);el.appendChild(b);
+    setTimeout(function(){s[1].textContent=val;a.remove();b.remove();},620);
+    prev[id]=val;
+  }
+  function tick(){
+    var d=new Date(), parts={};
+    fmt.formatToParts(d).forEach(function(x){parts[x.type]=x.value;});
+    var hh=parts.hour; if(h24&&hh.length<2) hh='0'+hh; if(hh==='24') hh='00';
+    set('h',hh); set('m',parts.minute);
+    document.getElementById('ap').textContent=h24?'':(parts.dayPeriod||'').toUpperCase();
+    setTimeout(tick,1000-d.getMilliseconds());
+  }
+  tick();
+})();
+</script>
+</body>
+</html>
